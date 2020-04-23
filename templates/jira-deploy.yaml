@@ -1,0 +1,145 @@
+kind: Template
+apiVersion: v1
+metadata:
+    name: jira-software
+    labels:
+        name: jira
+        app: ${APP_NAME}
+objects:
+    -
+        kind: DeploymentConfig
+        apiVersion: v1
+        metadata:
+            name: jiradb
+            app: ${APP_NAME}
+        spec:
+            replicas: 1
+            selector:
+                name: jiradb
+            template:
+                metadata:
+                    labels:
+                        name: jiradb
+                spec:
+                    containers:
+                    - env:
+                      - name: POSTGRES_PASSWORD
+                        value: ${POSTGRES_PASSWORD}
+                      - name: POSTGRES_USER
+                        value: ${POSTGRES_USER}
+                      image: ' '
+                      name: jiradb
+                    volumeMounts:
+                    - mountPath: /var/lib/postgresql/data
+                      name: jiradatabase
+                    restartPolicy: Always
+                    volumes:
+                        - name: jiradatabase
+                          persistentVolumeClaim:
+                            claimName: jiradatabase
+            triggers:
+                - type: ConfigChange
+                - imageChangeParams:
+                    automatic: true
+                    containerNames:
+                    - jiradb
+                    from:
+                        kind: ImageStreamTag
+                        name: jira-db:9.6
+                        namespace: ${IMAGE_NAMESPACE}
+                  type: ImageChange
+    - 
+        kind: DeploymentConfig
+        apiVersion: v1
+        metadata:
+            name: jira-software
+            app: ${APP_NAME}
+        spec:
+            replicas: 1
+            selector:
+                name: jira
+            template:
+                metadata:
+                    labels:
+                        name: jira
+                spec:
+                    containers:
+                        - env:
+                          - name: ATL_DB_DRIVER
+                            value: org.postgressql.Driver
+                          - name: ATL_DB_TYPE
+                            value: postgres72
+                          image: ''
+                          name: jira
+                    ports:
+                        - containerPort: 8091
+                    volumeMounts:
+                    - mountPath: /var/atlassian/jira
+                      name: jiravolume
+                    restartPolicy: Always
+                    volumes:
+                        - name: jiravolume
+                          persistentVolumeClaim:
+                            claimName: jiravolume
+            triggers:
+                - type: ConfigChange
+                - imageChangeParams:
+                    automatic: true
+                    containerNames:
+                    - jira
+                    from:
+                        kind: ImageStreamTag
+                        name: jira-software:${JIRA_TAG}
+                        namespace: ${IMAGE_NAMESPACE}
+                  type: ImageChange
+parameters:
+    -
+        name: APP_NAME
+        displayName: App name
+        description: Used to group components together in the OS Console
+        required: true
+        value: jira
+    -
+        name: IMAGE_NAMESPACE
+        displayName: Image Namespace
+        description: The namespace of the OS project containing the imagestreams
+        required: true
+        value: myproject
+    -
+        name: POSTGRES_USER
+        displayName: Postgres username
+        description: The username for Postgres to be used to access the DB
+        required: true
+        generate: expression
+        from: '[a-zA-Z0-9]{10}'
+    -
+        name: POSTGRES_PASSWORD
+        displayName: Postgres password
+        description: The password for Postgres to be used to access the DB
+        required: true
+        generate: expression
+        from: '[a-zA-Z0-9]{16}'
+    -
+        name: POSTGRES_TAG
+        displayName: Postgres image tag to use
+        description: The image tag to use for Postgres
+        required: true
+        value: "9.6"   
+    -
+        name: JIRA_TAG
+        displayName: JIRA Software image tag to use
+        description: The image tag to use for JIRA Software
+        required: true
+        value: latest
+    -
+        name: PERSISTENT_VOLUME_SIZE
+        displayName: Persistent Volume Size
+        description: The size of the persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+        required: true
+        value: 1Gi
+    -
+        name: PERSISTENT_VOLUME_CLASS
+        displayName: Persistent Volume Class Name
+        description: The class of the volume; netapp-file-standard, netapp-block-standard
+        required: true
+        value: netapp-file-standard           

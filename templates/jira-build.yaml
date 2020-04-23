@@ -1,0 +1,60 @@
+kind: Template
+apiVersion: v1
+metadata:
+    name: jira-software-template
+objects:
+    - 
+        kind: ImageStream
+        apiVersion: v1
+        metadata:
+            name: jira-software
+        spec:
+            tags:
+            - annotations: null
+              from:
+                kind: DockerImage
+                name: atlassian/jira-software
+              generation: null
+              name: ${JIRA_SOURCE_IMAGE_TAG}
+            status:
+                dockerImageRepository: ""
+    -
+        kind: ImageStream
+        apiVersion: v1
+        metadata:
+            name: jira-db
+        spec:
+            tags:
+            - annotations: null
+              from:
+                kind: DockerImage
+                name: ${DB_SOURCE_IMAGE_NAME}
+              generation: null
+              name: ${DB_SOURCE_IMAGE_TAG}
+        status:
+            dockerImageRepository: ""
+parameters:
+    -
+        name: SOURCE_IMAGE_KIND
+        displayName: Source Image kind
+        description: The kind of the source image, usually ImageStreamTag, or DockerImage
+        required: true
+        value: DockerImage
+    -
+        name: DB_SOURCE_IMAGE_NAME
+        displayName: Source Image Name for the Database
+        description: Name of the source image for the Database
+        required: true
+        value: registry.access.redhat.com/rhscl/postgresql-96-rhel7
+    -
+        name: DB_SOURCE_IMAGE_TAG
+        displayName: Source Image Tag for the Database
+        description: Tag for the Database
+        required: true
+        value: latest
+    -
+        name: JIRA_SOURCE_IMAGE_TAG
+        displayName: Source Image Tag for JIRA
+        description: Tag for JIRA
+        required: true
+        value: latest
