@@ -3,7 +3,7 @@ apiVersion: v1
 metadata:
     name: jira
     labels:
-        name: jira-software-template
+        name: jira
         app: ${APP_NAME}
 objects:
     -
@@ -23,10 +23,12 @@ objects:
                 spec:
                     containers:
                     - env:
-                      - name: POSTGRES_PASSWORD
+                      - name: POSTGRESQL_PASSWORD
                         value: ${POSTGRES_PASSWORD}
-                      - name: POSTGRES_USER
+                      - name: POSTGRESQL_USER
                         value: ${POSTGRES_USER}
+                      - name: POSTGRESQL_DATABASE
+                        value: ${POSTGRES_DATABASE}
                       image: ' '
                       name: jiradb
                     volumeMounts:
@@ -53,9 +55,6 @@ objects:
         apiVersion: v1
         metadata:
             name: jiradatabase
-            labels:
-                name: jiradatabase
-                app: ${APP_NAME}
         spec:
             storageClassName: ${PERSISTENT_VOLUME_CLASS}
             accessModes:
@@ -86,11 +85,11 @@ objects:
                             value: postgres72
                           image: ''
                           name: jira
-                    ports:
-                        - containerPort: 8091
-                    volumeMounts:
-                    - mountPath: /var/atlassian/jira
-                      name: jiravolume
+                          ports:
+                          - containerPort: 8080
+                          volumeMounts:
+                          - mountPath: /var/atlassian/application-data/jira
+                            name: jiravolume
                     restartPolicy: Always
                     volumes:
                         - name: jiravolume
@@ -112,9 +111,6 @@ objects:
         apiVersion: v1
         metadata:
             name: jiravolume
-            labels:
-                name: jiravolume
-                app: ${APP_NAME}
         spec:
             storageClassName: ${PERSISTENT_VOLUME_CLASS}
             accessModes: 
@@ -122,13 +118,28 @@ objects:
             resources:
                 requests:
                     storage: ${PERSISTENT_VOLUME_SIZE}
+    -
+        kind: Service
+        apiVersion: v1
+        metadata:
+            name: jira
+        spec:
+            ports:
+            - name: jira
+              protocol: TCP
+              port: 8080
+              targetPort: 8080
+            selector:
+                name: jira
+            type: ClusterIP
+            sessionAffinity: None
 parameters:
     -
         name: APP_NAME
         displayName: App name
         description: Used to group components together in the OS Console
         required: true
-        value: jira
+        value: jira-software
     -
         name: IMAGE_NAMESPACE
         displayName: Image Namespace
@@ -150,6 +161,12 @@ parameters:
         generate: expression
         from: '[a-zA-Z0-9]{16}'
     -
+        name: POSTGRES_DATABASE
+        displayName: Postgres database
+        description: The database for Postgres to use
+        required: true
+        value: jiradb
+    -
         name: POSTGRES_IMAGE
         displayName: Postgres image to use
         description: The image to use for Postgres
@@ -166,7 +183,7 @@ parameters:
         displayName: JIRA Software image tag to use
         description: The image tag to use for JIRA Software
         required: true
-        value: latest
+        value: '8.7.1'
     -
         name: PERSISTENT_VOLUME_SIZE
         displayName: Persistent Volume Size
