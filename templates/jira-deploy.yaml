@@ -1,9 +1,9 @@
 kind: Template
 apiVersion: v1
 metadata:
-    name: jira-software
+    name: jira
     labels:
-        name: jira
+        name: jira-software-template
         app: ${APP_NAME}
 objects:
     -
@@ -45,14 +45,29 @@ objects:
                     - jiradb
                     from:
                         kind: ImageStreamTag
-                        name: jira-db:9.6
+                        name: ${POSTGRES_IMAGE}:${POSTGRES_TAG}
                         namespace: ${IMAGE_NAMESPACE}
                   type: ImageChange
+    -
+        kind: PersistentVolumeClaim
+        apiVersion: v1
+        metadata:
+            name: jiradatabase
+            labels:
+                name: jiradatabase
+                app: ${APP_NAME}
+        spec:
+            storageClassName: ${PERSISTENT_VOLUME_CLASS}
+            accessModes:
+                - ReadWriteOnce
+            resources:
+                requests:
+                    storage: ${PERSISTENT_VOLUME_SIZE}
     - 
         kind: DeploymentConfig
         apiVersion: v1
         metadata:
-            name: jira-software
+            name: jira
             app: ${APP_NAME}
         spec:
             replicas: 1
@@ -92,6 +107,21 @@ objects:
                         name: jira-software:${JIRA_TAG}
                         namespace: ${IMAGE_NAMESPACE}
                   type: ImageChange
+    -
+        kind: PersistentVolumeClaim
+        apiVersion: v1
+        metadata:
+            name: jiravolume
+            labels:
+                name: jiravolume
+                app: ${APP_NAME}
+        spec:
+            storageClassName: ${PERSISTENT_VOLUME_CLASS}
+            accessModes: 
+                - ReadWriteOnce
+            resources:
+                requests:
+                    storage: ${PERSISTENT_VOLUME_SIZE}
 parameters:
     -
         name: APP_NAME
@@ -104,7 +134,7 @@ parameters:
         displayName: Image Namespace
         description: The namespace of the OS project containing the imagestreams
         required: true
-        value: myproject
+        value: myproject-tools
     -
         name: POSTGRES_USER
         displayName: Postgres username
@@ -120,11 +150,17 @@ parameters:
         generate: expression
         from: '[a-zA-Z0-9]{16}'
     -
+        name: POSTGRES_IMAGE
+        displayName: Postgres image to use
+        description: The image to use for Postgres
+        required: true
+        value: jira-db   
+    -
         name: POSTGRES_TAG
         displayName: Postgres image tag to use
         description: The image tag to use for Postgres
         required: true
-        value: "9.6"   
+        value: prod   
     -
         name: JIRA_TAG
         displayName: JIRA Software image tag to use
@@ -136,7 +172,7 @@ parameters:
         displayName: Persistent Volume Size
         description: The size of the persistent volume, e.g. 512Mi, 1Gi, 2Gi.
         required: true
-        value: 1Gi
+        value: 5Gi
     -
         name: PERSISTENT_VOLUME_CLASS
         displayName: Persistent Volume Class Name
