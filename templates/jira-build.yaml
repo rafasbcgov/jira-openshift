@@ -1,7 +1,7 @@
 kind: Template
 apiVersion: v1
 metadata:
-    name: jira-software-template
+    name: jira
 objects:
     - 
         kind: ImageStream
@@ -13,7 +13,7 @@ objects:
             - annotations: null
               from:
                 kind: DockerImage
-                name: atlassian/jira-software
+                name: atlassian/jira-software:${JIRA_SOURCE_IMAGE_TAG}
               generation: null
               name: ${JIRA_SOURCE_IMAGE_TAG}
             status:
@@ -28,7 +28,7 @@ objects:
             - annotations: null
               from:
                 kind: DockerImage
-                name: ${DB_SOURCE_IMAGE_NAME}
+                name: ${DB_SOURCE_IMAGE_NAME}:${DB_SOURCE_IMAGE_TAG}
               generation: null
               name: ${DB_SOURCE_IMAGE_TAG}
         status:
