@@ -31,9 +31,11 @@ objects:
                         value: ${POSTGRES_DATABASE}
                       image: ' '
                       name: jiradb
-                    volumeMounts:
-                    - mountPath: /var/lib/postgresql/data
-                      name: jiradatabase
+                      ports:
+                      - containerPort: 5432 
+                      volumeMounts:
+                      - mountPath: /var/lib/postgresql/data
+                        name: jiradatabase
                     restartPolicy: Always
                     volumes:
                         - name: jiradatabase
@@ -62,6 +64,21 @@ objects:
             resources:
                 requests:
                     storage: ${PERSISTENT_VOLUME_SIZE}
+    -
+        kind: Service
+        apiVersion: v1
+        metadata:
+            name: jiradb
+        spec:
+            ports:
+            - name: jiradb
+              protocol: TCP
+              port: 5432
+              targetPort: 5432
+            selector:
+                name: jiradb
+            type: ClusterIP
+            sessionAffinity: None
     - 
         kind: DeploymentConfig
         apiVersion: v1
@@ -76,7 +93,7 @@ objects:
                 metadata:
                     labels:
                         name: jira
-                spec:
+                spec: 
                     containers:
                         - env:
                           - name: ATL_DB_DRIVER
@@ -90,6 +107,13 @@ objects:
                           volumeMounts:
                           - mountPath: /var/atlassian/application-data/jira
                             name: jiravolume
+                          resources:
+                            requests:
+                                cpu: 100m
+                                memory: 125Mi
+                            limits:
+                                cpu: 2000m
+                                memory: 4Gi
                     restartPolicy: Always
                     volumes:
                         - name: jiravolume
