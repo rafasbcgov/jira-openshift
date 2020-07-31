@@ -1,6 +1,6 @@
 # JIRA OpenShift
 
-A collection of templates to deploy JIRA into the OpenShift environment. 
+A collection of templates to build and deploy JIRA into the OpenShift environment. 
 
 Work in progrss. 
  
